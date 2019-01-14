@@ -18,19 +18,20 @@ hdr = {
        'Connection': 'keep-alive'
        }
 
-domain="http://wapp8.com/"
+domain="http://www.gg213.com"
 flpg="?m=vod-type-id-16-pg-"
+path="./gg213/"
 
 
 print("Checking Files ...")
-LIST_FILE = open("./"+"WAPP8"+"/"+"LIST.txt","w",encoding='utf-8')
+LIST_FILE = open(path+"LIST.txt","w",encoding='utf-8')
 LIST_FILE.close()
 print("Check Files ready!")
 
 
 
 print("Reading Files ...")
-LIST_FILE = open("./"+"WAPP8"+"/"+"LIST.txt","r",encoding='utf-8')
+LIST_FILE = open(path+"LIST.txt","r",encoding='utf-8')
 LIST_DATA = LIST_FILE.read()
 print("Read Files success!")
 LIST={}
@@ -47,77 +48,68 @@ print(LIST)
 print(LIST_FILE)
 
 
-LIST_FILE = open("./"+"WAPP8"+"/"+"LIST.txt","a",encoding='utf-8')
+LIST_FILE = open(path+"LIST.txt","a",encoding='utf-8')
 
 
 
 
 LBPages=1
 try:
-        ejurl=domain+flpg+str(LBPages)+".html"
-        pagelb=urllib.request.urlopen(ejurl)
-        print (ejurl)
+        mainurl=domain
+        pagelb=urllib.request.urlopen(mainurl)
+        print (mainurl)
 except Exception as e:
         print (str(e))
         pass
                                         
 else:
         if pagelb:
-                LBPageDetial=str(pagelb.read(),'utf8') 
-                LBLink=""
-                #print(str(LBPageDetial))            
-                if ("下一页") in LBPageDetial and ("尾页") in LBPageDetial:
-                        LBPages=LBPageDetial[LBPageDetial.index("下一页"):LBPageDetial.index("尾页")]
-                        LBLink=LBPages[LBPages.index("href=")+6:LBPages.index("pg-")+3]                        
-                        LBPages=LBPages[LBPages.index("pg-")+3:LBPages.index(".html")]                        
-                        print ((domain+LBLink+LBPages+".html").replace(".com//",".com/"))
-print (LBPages)					
-						
-						 
-						
-for LBPage in range(int(LBPages)):
-        try:
-                ejurl=domain+flpg+str(LBPage)+".html"
-                pagelb=urllib.request.urlopen(ejurl)
-                print (ejurl)
-        except Exception as e:
-                print (str(e))
-                pass
-                                                
-        else:
-                if pagelb:
-                        LBPageDetial=str(pagelb.read(),'utf8') 
-                        LBLink=""
-                        LBLinkNum=0
-                        if ("<ul class=\"videos\">") in LBPageDetial and ("尾页") in LBPageDetial:
-                                XQPagesUL=LBPageDetial[LBPageDetial.index("<ul class=\"videos\">"):LBPageDetial.index("尾页")]
-                                XQPagesUL=XQPagesUL[0:XQPagesUL.index("</ul>")] 
-                                if ("</ul>") in XQPagesUL  :               
-                                        XQPagesUL=XQPagesUL[0:XQPagesUL.index("</ul>")]  
-                                        if ("</ul>") in XQPagesUL  :               
-                                                XQPagesUL=XQPagesUL[0:XQPagesUL.index("</ul>")] 
-                                XQPagesLIS=XQPagesUL.split( "</li>")
-                                print("XQPagesLIS") 
-                                print(len(XQPagesLIS))
-
-                                for XQPageNum in range(len(XQPagesLIS)-1):
-                                        XQPageData=XQPagesLIS[XQPageNum]
-                                        if ("<a href=") in XQPageData :
-                                                XQPageLink=domain+XQPageData[XQPageData.index("<a href=")+9:XQPageData.index(".html")+5]  
-                                                print(XQPageNum)
-                                                print(XQPageLink)
-                                                print("")
-                                                LBLink+=XQPageLink+"\n"
-                                                LBLinkNum+=1
-                        LBLink.replace("\r\n\r\n","\r\n")
-                        print("Checking Files ...")
-                        PAGE_FILE = open("./"+"WAPP8"+"/"+"LIST"+str(LBPage)+".txt","w",encoding='utf-8')
-                        print("Check Files ready!")
-                        PAGE_FILE.write(str(LBLink))
-                        PAGE_FILE.flush()                         
-                        PAGE_FILE.close()
-                        print(len(LBLink))
-        print (LBPage)	
+                LBPageDetial=str(pagelb.read(),'GBK') 
+                print("Checking Files ...")
+                PAGE_FILE = open(path+"main.txt","w",encoding='utf-8')
+                print("Check Files ready!")
+                PAGE_FILE.write(str(LBPageDetial))
+                PAGE_FILE.flush()                         
+                PAGE_FILE.close()
+                print(len(LBPageDetial))
+                if ("<div class=\"videos\">") in LBPageDetial :
+                        XQPagesUL=LBPageDetial[LBPageDetial.index("<div class=\"videos\">"):LBPageDetial.index("<div class=\"footer\">")]
+                        XQPagesLIS=XQPagesUL.split( "<div class=\"video\">")
+                        print("XQPagesLIS") 
+                        print(len(XQPagesLIS))
  
-        	
-				
+                        for VPageNum in range(1,len(XQPagesLIS)):
+                                print(VPageNum)
+                                if  ("<a href=\"/video/") in  XQPagesLIS[VPageNum] :
+                                        DetialPageLink=domain+XQPagesLIS[VPageNum][XQPagesLIS[VPageNum].index("<a href=")+9:XQPagesLIS[VPageNum].index(".html")+5] 
+                                        print("DetialPageLink") 
+                                        print(DetialPageLink) 
+
+                                        try:
+                                                xqurl=DetialPageLink
+                                                xqpage=urllib.request.urlopen(xqurl)
+                                                print (xqurl)
+                                        except Exception as e:
+                                                print (str(e))
+                                                pass
+                                                                                
+                                        else:
+                                                if xqpage:
+                                                        XQPageDetial=str(xqpage.read(),'GBK') 
+                                                        print("Checking Files ...")
+                                                        MP4Detial=XQPageDetial[XQPageDetial.index("<source class=\"src\"")+25:XQPageDetial.index("Download video")]
+                                                        MP4Detial=MP4Detial[0:MP4Detial.index("\"")]
+                                                        MP4Title=XQPageDetial[XQPageDetial.index("<div class=\"a1\">")+16:XQPageDetial.index("<source class=\"src\"")]
+                                                        MP4Title=MP4Title[0:MP4Title.index("</div>")]
+                                                        print(MP4Title)
+                                                        MP4Pic=XQPageDetial[XQPageDetial.index("<div class=\"a1\">")+16:XQPageDetial.index("Download video")]
+                                                        MP4Pic=MP4Pic[MP4Pic.index("poster=\"")+8:MP4Pic.index("<source class=\"src\"")]
+                                                        MP4Pic=MP4Pic[0:MP4Pic.index("\">")]
+                                                        print(MP4Pic)
+
+
+                                                        XQPAGE_FILE = open(path+str(VPageNum)+".txt","w",encoding='utf-8')
+                                                        print("Check Files ready!")
+                                                        XQPAGE_FILE.write(MP4Title+"\n"+MP4Pic+"\n"+MP4Detial)
+                                                        XQPAGE_FILE.flush()                         
+                                                        XQPAGE_FILE.close()

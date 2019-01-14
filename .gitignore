@@ -14,6 +14,7 @@ Podfile.lock
 *.pbxproj
 *.xcworkspacedata
 /wapp8/*
+/gg213/*
 # Android
 .gradle
 .idea
