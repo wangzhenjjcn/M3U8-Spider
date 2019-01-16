@@ -3,7 +3,7 @@ import sys,time,datetime,os,urllib.request
 import io
 import sys
 import hashlib
-
+import threading
 print("System loading!")
 
 #sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
@@ -19,18 +19,18 @@ hdr = {
        'Connection': 'keep-alive'
        }
 
-domain="http://www.gg213.com"
-path="./gg213/"
-
+DOMAIN="http://www.gg213.com"
+PATH="./gg213/"
+ALLTHREADS = 1
 
 print("Checking Files ...")
-LIST_FILE = open(path+"LIST.txt","w",encoding='utf-8')
+LIST_FILE = open(PATH+"LIST.txt","w",encoding='utf-8')
 LIST_FILE.close()
-READED_FILE = open(path+"READED.txt","w",encoding='utf-8')
+READED_FILE = open(PATH+"READED.txt","w",encoding='utf-8')
 READED_FILE.close()
 print("Check Files ready!")
 print("Reading Files ...")
-LIST_FILE = open(path+"LIST.txt","r",encoding='utf-8')
+LIST_FILE = open(PATH+"LIST.txt","r",encoding='utf-8')
 LIST=[]
 linenum=0
 for lines in LIST_FILE:
@@ -42,7 +42,7 @@ LIST_FILE.close()
 print("LIST_FILE Success...")
 
 
-READED_FILE = open(path+"READED.txt","r",encoding='utf-8')
+READED_FILE = open(PATH+"READED.txt","r",encoding='utf-8')
 READED=[]
 for lines in READED_FILE:
         linesdata = lines.strip("\n")				
@@ -53,33 +53,43 @@ print("READED_FILE Success...")
 
 print("ALL Success...")
 
-LIST_FILE = open(path+"LIST.txt","a",encoding='utf-8')
-READED_FILE = open(path+"READED.txt","a",encoding='utf-8')
+LIST_FILE = open(PATH+"LIST.txt","a",encoding='utf-8')
+READED_FILE = open(PATH+"READED.txt","a",encoding='utf-8')
 
 
 
 
 
-
-def getPage(PAGEURL):
+def getPage(PAGEURL):     
+        global ALLTHREADS   
+        PAGEDATA=""
+        ALLTHREADS=ALLTHREADS+1           
+        while ALLTHREADS >50:
+                time.sleep(5)
         LIST.append(PAGEURL)
+        R=threading.Lock()
+        R.acquire()
         LIST_FILE.write(PAGEURL+"\n")
         LIST_FILE.flush()
+        R.release()
+        # LIST_FILE.write(PAGEURL+"\n")
+        # LIST_FILE.flush()
         try:
                 mainurl=PAGEURL
-                if mainurl=="" or len(mainurl)<3 : return ""
+                if mainurl=="" or len(mainurl)<3 : 
+                        ALLTHREADS=ALLTHREADS-1
+                        return PAGEDATA
                 pagelb=urllib.request.urlopen(mainurl)
         except Exception as e:
                 print (str(e))
-                return ""
+                ALLTHREADS=ALLTHREADS-1
+                return PAGEDATA
         else:
                 if pagelb:
                         PAGEDATA=str(pagelb.read(),'GBK')
-                        READED.append(PAGEURL)
-                        READED_FILE.write(PAGEURL+"\n")
-                        READED_FILE.flush()
-                        return PAGEDATA
-        return ""
+ 
+        ALLTHREADS=ALLTHREADS-1
+        return PAGEDATA
 
 
 
@@ -94,7 +104,7 @@ def getVideoPages(PAGEINFO):
                 XQPagesLIS=XQPagesUL.split( "<div class=\"video\">")
                 for VNum in range(1,len(XQPagesLIS)):
                         if  ("<a href=\"/video/") in  XQPagesLIS[VNum] :
-                                DetialPageLink=domain+XQPagesLIS[VNum][XQPagesLIS[VNum].index("<a href=")+9:XQPagesLIS[VNum].index(".html")+5] 
+                                DetialPageLink=DOMAIN+XQPagesLIS[VNum][XQPagesLIS[VNum].index("<a href=")+9:XQPagesLIS[VNum].index(".html")+5] 
                                 pages.append(DetialPageLink)
                                 pass
                         pass
@@ -106,29 +116,31 @@ def getVideoPages(PAGEINFO):
 
 def getLinkList(LINKPAGEINFO):
         links=[]
-         #<a href="/diao/se56.html" rel="" class="se async" title="All">欧美</a>
+        
         if ("<a href=\"") in LINKPAGEINFO :
-                print("12333")
+
                 LINKPagesDATA=LINKPAGEINFO
                 LINKPagesDATAs=LINKPagesDATA.split( "<a href=\"")
                 for VNum in range(1,len(LINKPagesDATAs)):
-                        print(VNum)
+                       
                         if  ("\"") in  LINKPagesDATAs[VNum] and (".html") in LINKPagesDATAs[VNum]  :
                                 DetialPageLink=LINKPagesDATAs[VNum][0:LINKPagesDATAs[VNum].index(".html")+5] 
-                                print(DetialPageLink)
-                                if ("\"") in  DetialPageLink or ("http") in  DetialPageLink or ("javascript") in  DetialPageLink or (":") in  DetialPageLink:
+
+                                if ("\"") in  DetialPageLink or ("http") in  DetialPageLink or ("javascript") in  DetialPageLink or (":") in  DetialPageLink or ("www") in  DetialPageLink or ("#") in  DetialPageLink:
                                         pass
                                 else:
-                                        links.append(domain+DetialPageLink)
-                                        print("++++Read new Link:"+domain+DetialPageLink)
+                                        links.append(DOMAIN+DetialPageLink)
+                                        
+                                        
                         elif ("\"") in  LINKPagesDATAs[VNum]:
                                 DetialPageLink=LINKPagesDATAs[VNum][0:LINKPagesDATAs[VNum].index("\"")] 
-                                print(DetialPageLink)
-                                if ("\"") in  DetialPageLink or ("http") in  DetialPageLink or ("javascript") in  DetialPageLink or (":") in  DetialPageLink:
+
+                                if ("\"") in  DetialPageLink or ("http") in  DetialPageLink or ("javascript") in  DetialPageLink or (":") in  DetialPageLink or ("www") in  DetialPageLink or ("#") in  DetialPageLink:
                                         pass
                                 else:
-                                        links.append(domain+DetialPageLink)
-                                        print("++++Read new Link:"+domain+DetialPageLink)
+                                        links.append(DOMAIN+DetialPageLink)
+                                        
+                                       
         return links
                        
 
@@ -137,42 +149,55 @@ def getLinkList(LINKPAGEINFO):
 
 
 def deCodeXQPage(XQURL):
+        global ALLTHREADS
+        ALLTHREADS=ALLTHREADS+1
+        while ALLTHREADS >50:
+                time.sleep(5)
         LIST.append(XQURL)
+        R=threading.Lock()
+        R.acquire()
         LIST_FILE.write(XQURL+"\n")
         LIST_FILE.flush()
-
-        if XQURL in READED: return
+        R.release()
+        # LIST_FILE.write(XQURL+"\n")
+        # LIST_FILE.flush()
+        if XQURL in READED: 
+         
+                ALLTHREADS=ALLTHREADS-1
+                return ""
 
         try:
                 xqpage=urllib.request.urlopen(XQURL)
         except Exception as e:
                 print("ERR")
                 print (str(e))
-                deCodeXQPage(XQURL)
-                pass            
+                
+                ALLTHREADS=ALLTHREADS-1
+                return ""           
         else:
                 if xqpage:
                         XQPageDetial=str(xqpage.read(),'GBK') 
                         MP4Detial=XQPageDetial[XQPageDetial.index("<source class=\"src\"")+25:XQPageDetial.index("Download video")]
                         MP4Detial=MP4Detial[0:MP4Detial.index("\"")]
                         MP4ID=MP4Detial[MP4Detial.index("xml/")+4:MP4Detial.index(".m")]                                                        
-                        print("......")
-                        print(MP4ID)
+                        print(str(ALLTHREADS)+ "   "+MP4ID)
                         MP4Title=XQPageDetial[XQPageDetial.index("<div class=\"a1\">")+16:XQPageDetial.index("<source class=\"src\"")]
                         MP4Title=MP4Title[0:MP4Title.index("</div>")]
-                        print(MP4Title)
                         MP4Pic=XQPageDetial[XQPageDetial.index("<div class=\"a1\">")+16:XQPageDetial.index("Download video")]
                         MP4Pic=MP4Pic[MP4Pic.index("poster=\"")+8:MP4Pic.index("<source class=\"src\"")]
                         MP4Pic=MP4Pic[0:MP4Pic.index("\">")]
-                        print(MP4Pic)
-                        XQPAGE_FILE = open(path+MP4ID+".txt","w",encoding='utf-8')
-                        print(" ")
+                        XQPAGE_FILE = open(PATH+MP4ID+".txt","w",encoding='utf-8')
                         XQPAGE_FILE.write(MP4Title+"\n"+MP4Pic+"\n"+MP4Detial)
                         XQPAGE_FILE.flush()                         
                         XQPAGE_FILE.close()
                         READED.append(XQURL)
+                        R=threading.Lock()
+                        R.acquire()
                         READED_FILE.write(XQURL+"\n")
                         READED_FILE.flush()
+                        R.release()
+        ALLTHREADS=ALLTHREADS-1
+        return
  
 
 
@@ -183,63 +208,95 @@ def deCodeXQPage(XQURL):
 
 
 
-def READPAGE(URL):
+def READPAGE(URL,LEVEL):
+        global ALLTHREADS
+        levle_this=int(LEVEL)+1
+        print("reading level:"+str(levle_this)+"    "+URL+" ..")
         pageurl=URL
-
         LIST.append(URL)
+        R=threading.Lock()
+        R.acquire()
         LIST_FILE.write(URL+"\n")
         LIST_FILE.flush()
-        print("Loading reading....")
+        R.release()
 
-        if len(pageurl)<3 : pageurl=domain
-        
+
+        # LIST_FILE.write(URL+"\n")
+        # LIST_FILE.flush()
+        if len(pageurl)<3 : 
+                pageurl=DOMAIN        
         if URL in READED: 
-                print("++URL readed:"+URL)
                 return
-
-
-        print("Loading "+pageurl+" .....")
+        threads = []
         MAINPAGE=getPage(pageurl)
-        
-
-         
-      
-
-
-
-
-        print("++Reading "+pageurl+" .....")
         videoPages=getVideoPages(MAINPAGE)
-        
-        for videoPage in videoPages:
-                print("++Reading videoPage "+videoPage+" ----------------------------")
-                deCodeXQPage(videoPage)
-                print("++++Finish videoPage "+videoPage+" -------------------------------")
-                print(" ")
-                pass
-
         links=getLinkList(MAINPAGE)
-        
-        
-        
-        print(links)
+        for videoPage in videoPages:
+                if videoPage in READED:
+                        pass
+                else:
+                        threads.append( threading.Thread(target=deCodeXQPage,args=(videoPage,)) )
+                        pass
         for link in links:
-                print("++Reading link "+link+" ++++++++++++++++++++++++")
-                READPAGE(link)
-                print("++++Finish link "+link+" +++++++++++++++++++++++++")
-                print(" ")
-                pass
-        print("URL"+URL+" +++++++++++++++++++++++++")
-        print(" ")
+                LIST.append(link)
+                print("NewLinkAdded:"+link)
+                if link in READED:
+                        pass
+                else:
+                        threads.append(threading.Thread(target=READPAGE,args=(link,levle_this,)) )
+                        pass
+        for t in threads: 
+                t.setDaemon(True)
+                while threading.activeCount()  >3:
+                        print("threading.activeCount():"+str(threading.activeCount())+"        LEVEL:"+str(levle_this))
+                        for t in threads: 
+                                if len(t._args)>0:
+                                        print(t._args)
+                                pass
 
 
+
+                        time.sleep(5)
+                t.start()
+        done=False
+
+        while done==False:
+                done=True
+
+                for t in threads: 
+                        if  t.isAlive() :
+                                done=False
+                time.sleep(2)
+                print("UNDONE")
+
+
+        print("DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+        print(URL)
+        R=threading.Lock()
+        R.acquire()
         READED.append(URL)
         READED_FILE.write(URL+"\n")
+        for link in links:
+                 READED.append(link)
+                 READED_FILE.write(link+"\n")
         READED_FILE.flush()
+        R.release()
+
+        
+
+threading.Semaphore(5)  
+
+if len(LIST)>0:
+        for link in LIST:
+                READPAGE(link,1)
+                pass
+else:
+        READPAGE("",1)
+        pass
 
 
-READPAGE("")
+
+
 LIST_FILE.close()
 READED_FILE.close()
-
 
